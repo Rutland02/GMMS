@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "D:/QT/5.14.2/mingw73_64/include/**"  // 依然保留 Qt 头文件路径
+            ],
+            "defines": ["_DEBUG", "UNICODE", "_UNICODE"],
+            "windowsSdkVersion": "10.0.26100.0",  // 保持你的 Windows SDK 版本
+            "compilerPath": "cl.exe",  // 改用 MSVC 的编译器
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "windows-msvc-x64"  // 匹配 MSVC 模式
+        }
+    ],
+    "version": 4
+}
