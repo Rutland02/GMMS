@@ -5,9 +5,9 @@
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QPushButton>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QLineEdit>
 #include "DataManager.h"
+#include "AddEditMemberDialog.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -16,41 +16,59 @@ public:
     ~MainWindow();
 
 private slots:
-    // 会员相关槽函数
+    // 会员管理
     void onAddMemberClicked();
     void onEditMemberClicked();
     void onDeleteMemberClicked();
-    void refreshMemberTable();
+    void onSearchMemberClicked();
 
-    // 课程相关槽函数
-    void onAddCourseClicked();
-    void onEditCourseClicked();
-    void onDeleteCourseClicked();
-    void refreshCourseTable();
+    // 签到与预约
+    void onCheckInClicked();
+    void onReserveCourseClicked();
+    void onCancelReservationClicked();
 
 private:
     void initUI();
     void initMemberTab();
     void initCourseTab();
+    void initCheckInTab();
+
+    void refreshMemberTable();
+    void refreshCourseTable();
+    void refreshCheckInTable();
+    void refreshReservationTable();
 
     // UI组件
     QTabWidget *tabWidget;
     QWidget *memberTab;
     QWidget *courseTab;
+    QWidget *checkInTab;
 
-    // 会员表格和按钮
+    // 会员管理组件
     QTableWidget *memberTable;
+    QLineEdit *memberSearchEdit;
+    QPushButton *searchMemberBtn;
     QPushButton *addMemberBtn;
     QPushButton *editMemberBtn;
     QPushButton *deleteMemberBtn;
 
-    // 课程表格和按钮
+    // 课程管理组件
     QTableWidget *courseTable;
     QPushButton *addCourseBtn;
     QPushButton *editCourseBtn;
     QPushButton *deleteCourseBtn;
 
-    // 数据管理器
+    // 签到与预约组件
+    QTableWidget *checkInTable;
+    QTableWidget *reservationTable;
+    QPushButton *checkInBtn;
+    QPushButton *reserveBtn;
+    QPushButton *cancelReserveBtn;
+    QLineEdit *checkInMemberIdEdit;
+    QLineEdit *checkInCourseIdEdit;
+    QLineEdit *reserveMemberIdEdit;
+    QLineEdit *reserveCourseIdEdit;
+
     DataManager *dataManager;
 };
 

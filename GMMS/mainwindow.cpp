@@ -1,21 +1,22 @@
 #include "MainWindow.h"
-#include "AddEditMemberDialog.h"
-#include "AddEditCourseDialog.h"
 #include <QMessageBox>
 #include <QHeaderView>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QDate>
+#include <QGroupBox>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent),
-      dataManager(DataManager::getInstance()) {
-    setWindowTitle(QStringLiteral("健身房会员管理系统（GMMS）"));
-    setMinimumSize(800, 600);
+    : QMainWindow(parent), dataManager(DataManager::getInstance()) {
+    setWindowTitle(QStringLiteral("健身房会员管理系统"));
+    setMinimumSize(1200, 700);
     initUI();
 }
 
 MainWindow::~MainWindow() {}
 
 void MainWindow::initUI() {
-    // 中心窗口和标签页
     QWidget *centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
 
@@ -23,24 +24,33 @@ void MainWindow::initUI() {
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
     mainLayout->addWidget(tabWidget);
 
-    // 初始化会员标签页和课程标签页
+    // 初始化各标签页
     initMemberTab();
     initCourseTab();
+    initCheckInTab();
 
-    // 添加标签页
     tabWidget->addTab(memberTab, QStringLiteral("会员管理"));
     tabWidget->addTab(courseTab, QStringLiteral("课程管理"));
+    tabWidget->addTab(checkInTab, QStringLiteral("签到与预约"));
 }
 
 void MainWindow::initMemberTab() {
     memberTab = new QWidget(tabWidget);
     QVBoxLayout *layout = new QVBoxLayout(memberTab);
 
-    // 按钮布局
+    // 查询区域
+    QHBoxLayout *searchLayout = new QHBoxLayout;
+    memberSearchEdit = new QLineEdit;
+    memberSearchEdit->setPlaceholderText(QStringLiteral("输入会员ID或姓名查询..."));
+    searchMemberBtn = new QPushButton(QStringLiteral("查询"));
+    searchLayout->addWidget(memberSearchEdit);
+    searchLayout->addWidget(searchMemberBtn);
+
+    // 操作按钮
     QHBoxLayout *btnLayout = new QHBoxLayout;
-    addMemberBtn = new QPushButton(QStringLiteral("添加会员"), memberTab);
-    editMemberBtn = new QPushButton(QStringLiteral("编辑会员"), memberTab);
-    deleteMemberBtn = new QPushButton(QStringLiteral("删除会员"), memberTab);
+    addMemberBtn = new QPushButton(QStringLiteral("添加会员"));
+    editMemberBtn = new QPushButton(QStringLiteral("编辑会员"));
+    deleteMemberBtn = new QPushButton(QStringLiteral("删除会员"));
     btnLayout->addWidget(addMemberBtn);
     btnLayout->addWidget(editMemberBtn);
     btnLayout->addWidget(deleteMemberBtn);
@@ -48,27 +58,27 @@ void MainWindow::initMemberTab() {
 
     // 会员表格
     memberTable = new QTableWidget(memberTab);
-    memberTable->setColumnCount(4);
+    memberTable->setColumnCount(5);
     memberTable->setHorizontalHeaderLabels({
         QStringLiteral("会员ID"),
         QStringLiteral("姓名"),
         QStringLiteral("联系电话"),
-        QStringLiteral("加入日期")
+        QStringLiteral("加入日期"),
+        QStringLiteral("有效期至")
     });
-    memberTable->setSelectionBehavior(QAbstractItemView::SelectRows); // 整行选择
-    memberTable->setEditTriggers(QAbstractItemView::NoEditTriggers); // 禁止编辑
-    memberTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); // 列宽自适应
+    memberTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    // 添加到布局
+    // 布局组合
+    layout->addLayout(searchLayout);
     layout->addLayout(btnLayout);
     layout->addWidget(memberTable);
 
-    // 连接信号槽
+    // 信号连接
+    connect(searchMemberBtn, &QPushButton::clicked, this, &MainWindow::onSearchMemberClicked);
     connect(addMemberBtn, &QPushButton::clicked, this, &MainWindow::onAddMemberClicked);
     connect(editMemberBtn, &QPushButton::clicked, this, &MainWindow::onEditMemberClicked);
     connect(deleteMemberBtn, &QPushButton::clicked, this, &MainWindow::onDeleteMemberClicked);
 
-    // 初始刷新表格
     refreshMemberTable();
 }
 
@@ -76,11 +86,11 @@ void MainWindow::initCourseTab() {
     courseTab = new QWidget(tabWidget);
     QVBoxLayout *layout = new QVBoxLayout(courseTab);
 
-    // 按钮布局
+    // 操作按钮
     QHBoxLayout *btnLayout = new QHBoxLayout;
-    addCourseBtn = new QPushButton(QStringLiteral("添加课程"), courseTab);
-    editCourseBtn = new QPushButton(QStringLiteral("编辑课程"), courseTab);
-    deleteCourseBtn = new QPushButton(QStringLiteral("删除课程"), courseTab);
+    addCourseBtn = new QPushButton(QStringLiteral("添加课程"));
+    editCourseBtn = new QPushButton(QStringLiteral("编辑课程"));
+    deleteCourseBtn = new QPushButton(QStringLiteral("删除课程"));
     btnLayout->addWidget(addCourseBtn);
     btnLayout->addWidget(editCourseBtn);
     btnLayout->addWidget(deleteCourseBtn);
@@ -88,67 +98,104 @@ void MainWindow::initCourseTab() {
 
     // 课程表格
     courseTable = new QTableWidget(courseTab);
-    courseTable->setColumnCount(5);
+    courseTable->setColumnCount(3);
     courseTable->setHorizontalHeaderLabels({
         QStringLiteral("课程ID"),
         QStringLiteral("课程名称"),
-        QStringLiteral("授课老师"),
-        QStringLiteral("上课时间"),
-        QStringLiteral("最大人数")
+        QStringLiteral("课程时间")
     });
-    courseTable->setSelectionBehavior(QAbstractItemView::SelectRows); // 整行选择
-    courseTable->setEditTriggers(QAbstractItemView::NoEditTriggers); // 禁止编辑
-    courseTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); // 列宽自适应
+    courseTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    // 添加到布局
     layout->addLayout(btnLayout);
     layout->addWidget(courseTable);
 
-    // 连接信号槽
-    connect(addCourseBtn, &QPushButton::clicked, this, &MainWindow::onAddCourseClicked);
-    connect(editCourseBtn, &QPushButton::clicked, this, &MainWindow::onEditCourseClicked);
-    connect(deleteCourseBtn, &QPushButton::clicked, this, &MainWindow::onDeleteCourseClicked);
-
-    // 初始刷新表格
     refreshCourseTable();
 }
 
-// 会员表格刷新
-void MainWindow::refreshMemberTable() {
-    // 清空表格
-    memberTable->setRowCount(0);
+void MainWindow::initCheckInTab() {
+    checkInTab = new QWidget(tabWidget);
+    QVBoxLayout *mainLayout = new QVBoxLayout(checkInTab);
 
-    // 获取所有会员
+    // 签到区域
+    QGroupBox *checkInGroup = new QGroupBox(QStringLiteral("会员签到"), checkInTab);
+    QHBoxLayout *checkInLayout = new QHBoxLayout(checkInGroup);
+    checkInLayout->addWidget(new QLabel(QStringLiteral("会员ID:")));
+    checkInMemberIdEdit = new QLineEdit;
+    checkInLayout->addWidget(checkInMemberIdEdit);
+    checkInLayout->addWidget(new QLabel(QStringLiteral("课程ID:")));
+    checkInCourseIdEdit = new QLineEdit;
+    checkInLayout->addWidget(checkInCourseIdEdit);
+    checkInBtn = new QPushButton(QStringLiteral("确认签到"));
+    checkInLayout->addWidget(checkInBtn);
+
+    // 预约区域
+    QGroupBox *reserveGroup = new QGroupBox(QStringLiteral("课程预约"), checkInTab);
+    QHBoxLayout *reserveLayout = new QHBoxLayout(reserveGroup);
+    reserveLayout->addWidget(new QLabel(QStringLiteral("会员ID:")));
+    reserveMemberIdEdit = new QLineEdit;
+    reserveLayout->addWidget(reserveMemberIdEdit);
+    reserveLayout->addWidget(new QLabel(QStringLiteral("课程ID:")));
+    reserveCourseIdEdit = new QLineEdit;
+    reserveLayout->addWidget(reserveCourseIdEdit);
+    reserveBtn = new QPushButton(QStringLiteral("预约课程"));
+    cancelReserveBtn = new QPushButton(QStringLiteral("取消预约"));
+    reserveLayout->addWidget(reserveBtn);
+    reserveLayout->addWidget(cancelReserveBtn);
+
+    // 记录表格
+    QTabWidget *recordTab = new QTabWidget(checkInTab);
+    checkInTable = new QTableWidget;
+    checkInTable->setColumnCount(4);
+    checkInTable->setHorizontalHeaderLabels({
+        QStringLiteral("会员ID"),
+        QStringLiteral("会员姓名"),
+        QStringLiteral("课程ID"),
+        QStringLiteral("签到时间")
+    });
+    checkInTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    reservationTable = new QTableWidget;
+    reservationTable->setColumnCount(4);
+    reservationTable->setHorizontalHeaderLabels({
+        QStringLiteral("会员ID"),
+        QStringLiteral("会员姓名"),
+        QStringLiteral("课程ID"),
+        QStringLiteral("预约时间")
+    });
+    reservationTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    recordTab->addTab(checkInTable, QStringLiteral("签到记录"));
+    recordTab->addTab(reservationTable, QStringLiteral("预约记录"));
+
+    // 布局组合
+    mainLayout->addWidget(checkInGroup);
+    mainLayout->addWidget(reserveGroup);
+    mainLayout->addWidget(recordTab);
+
+    // 信号连接
+    connect(checkInBtn, &QPushButton::clicked, this, &MainWindow::onCheckInClicked);
+    connect(reserveBtn, &QPushButton::clicked, this, &MainWindow::onReserveCourseClicked);
+    connect(cancelReserveBtn, &QPushButton::clicked, this, &MainWindow::onCancelReservationClicked);
+
+    refreshCheckInTable();
+    refreshReservationTable();
+}
+
+// 会员管理相关
+void MainWindow::refreshMemberTable() {
+    memberTable->setRowCount(0);
     QList<Member> members = dataManager->getAllMembers();
     for (int i = 0; i < members.size(); ++i) {
-        const Member& member = members[i];
+        const Member& m = members[i];
         memberTable->insertRow(i);
-        memberTable->setItem(i, 0, new QTableWidgetItem(member.id()));
-        memberTable->setItem(i, 1, new QTableWidgetItem(member.name()));
-        memberTable->setItem(i, 2, new QTableWidgetItem(member.phone()));
-        memberTable->setItem(i, 3, new QTableWidgetItem(member.joinDate()));
+        memberTable->setItem(i, 0, new QTableWidgetItem(m.id()));
+        memberTable->setItem(i, 1, new QTableWidgetItem(m.name()));
+        memberTable->setItem(i, 2, new QTableWidgetItem(m.phone()));
+        memberTable->setItem(i, 3, new QTableWidgetItem(m.joinDate()));
+        memberTable->setItem(i, 4, new QTableWidgetItem(m.expiryDate()));
     }
 }
 
-// 课程表格刷新
-void MainWindow::refreshCourseTable() {
-    // 清空表格
-    courseTable->setRowCount(0);
-
-    // 获取所有课程
-    QList<Course> courses = dataManager->getAllCourses();
-    for (int i = 0; i < courses.size(); ++i) {
-        const Course& course = courses[i];
-        courseTable->insertRow(i);
-        courseTable->setItem(i, 0, new QTableWidgetItem(course.id()));
-        courseTable->setItem(i, 1, new QTableWidgetItem(course.name()));
-        courseTable->setItem(i, 2, new QTableWidgetItem(course.teacher()));
-        courseTable->setItem(i, 3, new QTableWidgetItem(course.time()));
-        courseTable->setItem(i, 4, new QTableWidgetItem(QString::number(course.maxNum())));
-    }
-}
-
-// 添加会员
 void MainWindow::onAddMemberClicked() {
     AddEditMemberDialog dialog(AddEditMemberDialog::AddMode, this);
     if (dialog.exec() == QDialog::Accepted) {
@@ -162,126 +209,186 @@ void MainWindow::onAddMemberClicked() {
     }
 }
 
-// 编辑会员
 void MainWindow::onEditMemberClicked() {
-    // 获取选中行
     int row = memberTable->currentRow();
     if (row < 0) {
-        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("请选择要编辑的会员！"));
+        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("请先选择要编辑的会员！"));
         return;
     }
-
-    // 获取选中会员ID
     QString memberId = memberTable->item(row, 0)->text();
     Member member = dataManager->getMemberById(memberId);
 
-    // 打开编辑对话框
     AddEditMemberDialog dialog(AddEditMemberDialog::EditMode, member, this);
     if (dialog.exec() == QDialog::Accepted) {
         Member newMember = dialog.getMember();
         if (dataManager->editMember(memberId, newMember)) {
             QMessageBox::information(this, QStringLiteral("成功"), QStringLiteral("会员编辑成功！"));
             refreshMemberTable();
-        } else {
-            QMessageBox::warning(this, QStringLiteral("失败"), QStringLiteral("编辑失败，请重试！"));
         }
     }
 }
 
-// 删除会员
 void MainWindow::onDeleteMemberClicked() {
-    // 获取选中行
     int row = memberTable->currentRow();
     if (row < 0) {
-        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("请选择要删除的会员！"));
+        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("请先选择要删除的会员！"));
         return;
     }
-
-    // 确认删除
     QString memberId = memberTable->item(row, 0)->text();
-    QString memberName = memberTable->item(row, 1)->text();
-    int ret = QMessageBox::question(
-        this,
-        QStringLiteral("确认删除"),
-        QStringLiteral("确定要删除会员【%1（%2）】吗？").arg(memberName).arg(memberId),
-        QMessageBox::Yes | QMessageBox::No
-    );
-
-    if (ret == QMessageBox::Yes) {
+    if (QMessageBox::question(this, QStringLiteral("确认"), QStringLiteral("确定要删除该会员吗？")) == QMessageBox::Yes) {
         if (dataManager->deleteMember(memberId)) {
             QMessageBox::information(this, QStringLiteral("成功"), QStringLiteral("会员删除成功！"));
             refreshMemberTable();
-        } else {
-            QMessageBox::warning(this, QStringLiteral("失败"), QStringLiteral("删除失败，请重试！"));
         }
     }
 }
 
-// 添加课程
-void MainWindow::onAddCourseClicked() {
-    AddEditCourseDialog dialog(AddEditCourseDialog::AddMode, this);
-    if (dialog.exec() == QDialog::Accepted) {
-        Course course = dialog.getCourse();
-        if (dataManager->addCourse(course)) {
-            QMessageBox::information(this, QStringLiteral("成功"), QStringLiteral("课程添加成功！"));
-            refreshCourseTable();
-        } else {
-            QMessageBox::warning(this, QStringLiteral("失败"), QStringLiteral("课程ID已存在！"));
-        }
+void MainWindow::onSearchMemberClicked() {
+    QString keyword = memberSearchEdit->text().trimmed();
+    QList<Member> results = dataManager->searchMembers(keyword);
+
+    memberTable->setRowCount(0);
+    for (int i = 0; i < results.size(); ++i) {
+        const Member& m = results[i];
+        memberTable->insertRow(i);
+        memberTable->setItem(i, 0, new QTableWidgetItem(m.id()));
+        memberTable->setItem(i, 1, new QTableWidgetItem(m.name()));
+        memberTable->setItem(i, 2, new QTableWidgetItem(m.phone()));
+        memberTable->setItem(i, 3, new QTableWidgetItem(m.joinDate()));
+        memberTable->setItem(i, 4, new QTableWidgetItem(m.expiryDate()));
     }
 }
 
-// 编辑课程
-void MainWindow::onEditCourseClicked() {
-    // 获取选中行
-    int row = courseTable->currentRow();
-    if (row < 0) {
-        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("请选择要编辑的课程！"));
+// 课程管理相关
+void MainWindow::refreshCourseTable() {
+    courseTable->setRowCount(0);
+    QList<Course> courses = dataManager->getAllCourses();
+    for (int i = 0; i < courses.size(); ++i) {
+        const Course& c = courses[i];
+        courseTable->insertRow(i);
+        courseTable->setItem(i, 0, new QTableWidgetItem(c.id()));
+        courseTable->setItem(i, 1, new QTableWidgetItem(c.name()));
+        courseTable->setItem(i, 2, new QTableWidgetItem(c.time()));
+    }
+}
+
+// 签到与预约相关
+void MainWindow::refreshCheckInTable() {
+    checkInTable->setRowCount(0);
+    QList<CheckIn> checkIns = dataManager->getAllCheckIns();
+    for (int i = 0; i < checkIns.size(); ++i) {
+        const CheckIn& ci = checkIns[i];
+        checkInTable->insertRow(i);
+        checkInTable->setItem(i, 0, new QTableWidgetItem(ci.memberId()));
+        checkInTable->setItem(i, 1, new QTableWidgetItem(dataManager->getMemberById(ci.memberId()).name()));
+        checkInTable->setItem(i, 2, new QTableWidgetItem(ci.courseId()));
+        checkInTable->setItem(i, 3, new QTableWidgetItem(ci.checkInTime().toString("yyyy-MM-dd HH:mm")));
+    }
+}
+
+void MainWindow::refreshReservationTable() {
+    reservationTable->setRowCount(0);
+    QList<Reservation> reservations = dataManager->getAllReservations();
+    for (int i = 0; i < reservations.size(); ++i) {
+        const Reservation& r = reservations[i];
+        reservationTable->insertRow(i);
+        reservationTable->setItem(i, 0, new QTableWidgetItem(r.memberId()));
+        reservationTable->setItem(i, 1, new QTableWidgetItem(dataManager->getMemberById(r.memberId()).name()));
+        reservationTable->setItem(i, 2, new QTableWidgetItem(r.courseId()));
+        reservationTable->setItem(i, 3, new QTableWidgetItem(r.reserveTime().toString("yyyy-MM-dd HH:mm")));
+    }
+}
+
+void MainWindow::onCheckInClicked() {
+    QString memberId = checkInMemberIdEdit->text().trimmed();
+    QString courseId = checkInCourseIdEdit->text().trimmed();
+
+    if (memberId.isEmpty() || courseId.isEmpty()) {
+        QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("会员ID和课程ID不能为空！"));
         return;
     }
 
-    // 获取选中课程ID
-    QString courseId = courseTable->item(row, 0)->text();
+    // 检查会员是否存在且有效
+    Member member = dataManager->getMemberById(memberId);
+    if (member.id().isEmpty()) {
+        QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("会员不存在！"));
+        return;
+    }
+
+    // 检查会员是否过期
+    QDate expiryDate = QDate::fromString(member.expiryDate(), "yyyy-MM-dd");
+    if (expiryDate < QDate::currentDate()) {
+        QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("会员已过期！"));
+        return;
+    }
+
+    // 检查课程是否存在
     Course course = dataManager->getCourseById(courseId);
-
-    // 打开编辑对话框
-    AddEditCourseDialog dialog(AddEditCourseDialog::EditMode, course, this);
-    if (dialog.exec() == QDialog::Accepted) {
-        Course newCourse = dialog.getCourse();
-        if (dataManager->editCourse(courseId, newCourse)) {
-            QMessageBox::information(this, QStringLiteral("成功"), QStringLiteral("课程编辑成功！"));
-            refreshCourseTable();
-        } else {
-            QMessageBox::warning(this, QStringLiteral("失败"), QStringLiteral("编辑失败，请重试！"));
-        }
-    }
-}
-
-// 删除课程
-void MainWindow::onDeleteCourseClicked() {
-    // 获取选中行
-    int row = courseTable->currentRow();
-    if (row < 0) {
-        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("请选择要删除的课程！"));
+    if (course.id().isEmpty()) {
+        QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("课程不存在！"));
         return;
     }
 
-    // 确认删除
-    QString courseId = courseTable->item(row, 0)->text();
-    QString courseName = courseTable->item(row, 1)->text();
-    int ret = QMessageBox::question(
-        this,
-        QStringLiteral("确认删除"),
-        QStringLiteral("确定要删除课程【%1（%2）】吗？").arg(courseName).arg(courseId),
-        QMessageBox::Yes | QMessageBox::No
-    );
+    // 执行签到
+    CheckIn checkIn(memberId, courseId, QDateTime::currentDateTime());
+    if (dataManager->addCheckIn(checkIn)) {
+        QMessageBox::information(this, QStringLiteral("成功"), QStringLiteral("签到成功！"));
+        refreshCheckInTable();
+        checkInMemberIdEdit->clear();
+        checkInCourseIdEdit->clear();
+    }
+}
 
-    if (ret == QMessageBox::Yes) {
-        if (dataManager->deleteCourse(courseId)) {
-            QMessageBox::information(this, QStringLiteral("成功"), QStringLiteral("课程删除成功！"));
-            refreshCourseTable();
-        } else {
-            QMessageBox::warning(this, QStringLiteral("失败"), QStringLiteral("删除失败，请重试！"));
-        }
+void MainWindow::onReserveCourseClicked() {
+    QString memberId = reserveMemberIdEdit->text().trimmed();
+    QString courseId = reserveCourseIdEdit->text().trimmed();
+
+    if (memberId.isEmpty() || courseId.isEmpty()) {
+        QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("会员ID和课程ID不能为空！"));
+        return;
+    }
+
+    // 检查会员和课程是否存在
+    if (dataManager->getMemberById(memberId).id().isEmpty()) {
+        QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("会员不存在！"));
+        return;
+    }
+    if (dataManager->getCourseById(courseId).id().isEmpty()) {
+        QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("课程不存在！"));
+        return;
+    }
+
+    // 检查是否已预约
+    if (dataManager->isReserved(memberId, courseId)) {
+        QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("已预约该课程！"));
+        return;
+    }
+
+    // 执行预约
+    Reservation reservation(memberId, courseId, QDateTime::currentDateTime());
+    if (dataManager->addReservation(reservation)) {
+        QMessageBox::information(this, QStringLiteral("成功"), QStringLiteral("预约成功！"));
+        refreshReservationTable();
+        reserveMemberIdEdit->clear();
+        reserveCourseIdEdit->clear();
+    }
+}
+
+void MainWindow::onCancelReservationClicked() {
+    QString memberId = reserveMemberIdEdit->text().trimmed();
+    QString courseId = reserveCourseIdEdit->text().trimmed();
+
+    if (memberId.isEmpty() || courseId.isEmpty()) {
+        QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("会员ID和课程ID不能为空！"));
+        return;
+    }
+
+    if (dataManager->cancelReservation(memberId, courseId)) {
+        QMessageBox::information(this, QStringLiteral("成功"), QStringLiteral("取消预约成功！"));
+        refreshReservationTable();
+        reserveMemberIdEdit->clear();
+        reserveCourseIdEdit->clear();
+    } else {
+        QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("未找到该预约记录！"));
     }
 }

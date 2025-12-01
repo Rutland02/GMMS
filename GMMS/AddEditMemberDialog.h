@@ -15,12 +15,9 @@ class AddEditMemberDialog : public QDialog {
 public:
     enum Mode { AddMode, EditMode };
 
-    // 构造函数（添加模式）
     AddEditMemberDialog(Mode mode, QWidget *parent = nullptr);
-    // 构造函数（编辑模式）
     AddEditMemberDialog(Mode mode, const Member& member, QWidget *parent = nullptr);
 
-    // 获取输入的会员数据
     Member getMember() const;
 
 private slots:
@@ -35,16 +32,18 @@ private:
     Mode m_mode;
     Member m_member;
 
-    // UI组件
+    // 新增有效期相关UI
     QLabel *idLabel;
     QLabel *nameLabel;
     QLabel *phoneLabel;
     QLabel *joinDateLabel;
+    QLabel *expiryDateLabel; // 新增
 
     QLineEdit *idEdit;
     QLineEdit *nameEdit;
     QLineEdit *phoneEdit;
     QLineEdit *joinDateEdit;
+    QLineEdit *expiryDateEdit; // 新增
 
     QPushButton *confirmBtn;
     QPushButton *cancelBtn;
