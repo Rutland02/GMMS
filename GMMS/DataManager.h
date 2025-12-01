@@ -7,6 +7,8 @@
 #include <QCoreApplication>
 #include "Member.h"
 #include "Course.h"
+#include "CheckIn.h"       // 新增
+#include "Reservation.h"   // 新增
 
 class DataManager : public QObject {
     Q_OBJECT
@@ -25,6 +27,7 @@ public:
     bool editMember(const QString& oldId, const Member& newMember);
     bool deleteMember(const QString& id);
     Member getMemberById(const QString& id) const;
+    QList<Member> searchMembers(const QString& keyword) const; // 新增查询功能
 
     // 课程管理
     QList<Course> getAllCourses() const;
@@ -33,20 +36,30 @@ public:
     bool deleteCourse(const QString& id);
     Course getCourseById(const QString& id) const;
 
+    // 签到管理（新增）
+    QList<CheckIn> getAllCheckIns() const;
+    bool addCheckIn(const CheckIn& checkIn);
+    QList<CheckIn> getCheckInsByMemberId(const QString& memberId) const; // 按会员查询签到
+
+    // 预约管理（新增）
+    QList<Reservation> getAllReservations() const;
+    bool addReservation(const Reservation& reservation);
+    bool cancelReservation(const QString& memberId, const QString& courseId);
+    bool isReserved(const QString& memberId, const QString& courseId) const;
+
 private:
-    // 私有构造（单例）
     DataManager(QObject *parent = nullptr);
     DataManager(const DataManager&) = delete;
     DataManager& operator=(const DataManager&) = delete;
 
-    // 数据文件路径
     const QString DATA_FILE_PATH = QCoreApplication::applicationDirPath() + QStringLiteral("/gym_data.json");
 
-    // 数据存储
+    // 数据存储（新增签到和预约列表）
     QList<Member> m_members;
     QList<Course> m_courses;
+    QList<CheckIn> m_checkIns;       // 新增
+    QList<Reservation> m_reservations; // 新增
 
-    // 单例实例
     static DataManager* m_instance;
 };
 

@@ -8,6 +8,8 @@ CODECFORSRC = UTF-8
 
 # 源文件
 SOURCES += \
+        CheckIn.cpp \
+        Reservation.cpp \
         main.cpp \
         MainWindow.cpp \
         Member.cpp \
@@ -18,12 +20,14 @@ SOURCES += \
 
 # 头文件
 HEADERS  += \
+        CheckIn.h \
         MainWindow.h \
         Member.h \
         Course.h \
         DataManager.h \
         AddEditMemberDialog.h \
-        AddEditCourseDialog.h
+        AddEditCourseDialog.h \
+        Reservation.h
 
 # 资源文件（如果有）
 # RESOURCES += \
