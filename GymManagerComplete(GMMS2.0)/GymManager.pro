@@ -1,0 +1,27 @@
+QT += core gui widgets
+CONFIG += c++17
+
+TEMPLATE = app
+TARGET = GymManager
+
+INCLUDEPATH += model core ui
+
+SOURCES += \
+    main.cpp \
+    core/gymdata.cpp \
+    ui/gymmainwindow.cpp \
+    ui/membertab.cpp \
+    ui/coursetab.cpp \
+    ui/bookingtab.cpp \
+    ui/querytab.cpp
+
+HEADERS += \
+    model/member.h \
+    model/course.h \
+    model/record.h \
+    core/gymdata.h \
+    ui/gymmainwindow.h \
+    ui/membertab.h \
+    ui/coursetab.h \
+    ui/bookingtab.h \
+    ui/querytab.h
