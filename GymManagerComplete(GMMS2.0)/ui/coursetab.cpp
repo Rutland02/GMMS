@@ -48,7 +48,7 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
             return;
         }
         QString id = QString("C%1").arg(data->getCourses().size() + 1, 2, 10, QChar('0'));
-        Course c = {id, nameEdit->text(), coachEdit->text(), timeEdit->text(), maxSpin->value(), 0};
+        Course c(id, nameEdit->text(), coachEdit->text(), timeEdit->text(), maxSpin->value(), 0);
         if (!data->addCourse(c)) {
             QMessageBox::warning(this, "错误", "课程 ID 冲突！");
             return;
@@ -68,10 +68,10 @@ void CourseTab::refresh() {
     for (const auto &c : courses) {
         int row = table->rowCount();
         table->insertRow(row);
-        table->setItem(row, 0, new QTableWidgetItem(c.id));
-        table->setItem(row, 1, new QTableWidgetItem(c.name));
-        table->setItem(row, 2, new QTableWidgetItem(c.coach));
-        table->setItem(row, 3, new QTableWidgetItem(c.timeStr));
-        table->setItem(row, 4, new QTableWidgetItem(QString("%1 / %2").arg(c.currentBooked).arg(c.maxParticipants)));
+        table->setItem(row, 0, new QTableWidgetItem(c.id()));
+        table->setItem(row, 1, new QTableWidgetItem(c.name()));
+        table->setItem(row, 2, new QTableWidgetItem(c.coach()));
+        table->setItem(row, 3, new QTableWidgetItem(c.timeStr()));
+        table->setItem(row, 4, new QTableWidgetItem(QString("%1 / %2").arg(c.currentBooked()).arg(c.maxParticipants())));
     }
 }

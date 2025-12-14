@@ -9,11 +9,15 @@ class MemberTab;
 class CourseTab;
 class BookingTab;
 class QueryTab;
+class StatisticsTab;
 
 class GymMainWindow : public QMainWindow {
     Q_OBJECT
 public:
     explicit GymMainWindow(QWidget *parent = nullptr);
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     void applyStyles();
@@ -25,6 +29,7 @@ private:
     CourseTab *courseTab;
     BookingTab *bookingTab;
     QueryTab *queryTab;
+    StatisticsTab *statisticsTab;
 };
 
 #endif // GYMMAINWINDOW_H
