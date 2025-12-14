@@ -98,6 +98,17 @@ StatisticsTab::StatisticsTab(GymData *data, QWidget *parent)
     totalCheckInsLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; }");
     statsLayout->addWidget(totalCheckInsLabel, 3, 3);
     
+    // 积分统计
+    statsLayout->addWidget(new QLabel("总积分:"), 4, 2);
+    totalPointsLabel = new QLabel("0");
+    totalPointsLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; }");
+    statsLayout->addWidget(totalPointsLabel, 4, 3);
+    
+    statsLayout->addWidget(new QLabel("平均积分:"), 5, 2);
+    averagePointsLabel = new QLabel("0");
+    averagePointsLabel->setStyleSheet("QLabel { font-weight: bold; font-size: 14px; }");
+    statsLayout->addWidget(averagePointsLabel, 5, 3);
+    
     mainLayout->addWidget(overviewGroup);
     
     // 数据图表 - 每日活动趋势
@@ -170,6 +181,10 @@ void StatisticsTab::refresh()
     availableCoursesLabel->setText(QString::number(data->getAvailableCourses()));
     totalBookingsLabel->setText(QString::number(data->getTotalBookings()));
     totalCheckInsLabel->setText(QString::number(data->getTotalCheckIns()));
+    
+    // 更新积分统计
+    totalPointsLabel->setText(QString::number(data->getTotalPoints()));
+    averagePointsLabel->setText(QString::number(data->getAveragePoints(), 'f', 2));
     
     // 更新按课程统计表格
     QMap<QString, int> bookingsByCourse = data->getBookingsByCourse();

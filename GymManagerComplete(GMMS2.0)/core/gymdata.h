@@ -30,6 +30,8 @@ public:
     int getActiveMembers() const;
     int getExpiredMembers() const;
     QMap<QString, int> getMembersByLevel() const;
+    int getTotalPoints() const;
+    double getAveragePoints() const;
     
     int getTotalCourses() const;
     int getAvailableCourses() const;

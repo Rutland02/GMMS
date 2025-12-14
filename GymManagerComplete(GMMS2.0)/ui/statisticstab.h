@@ -38,6 +38,10 @@ private:
     QLabel *totalBookingsLabel;
     QLabel *totalCheckInsLabel;
     
+    // 积分统计标签
+    QLabel *totalPointsLabel;
+    QLabel *averagePointsLabel;
+    
     // 日期范围选择
     QDateEdit *startDateEdit;
     QDateEdit *endDateEdit;

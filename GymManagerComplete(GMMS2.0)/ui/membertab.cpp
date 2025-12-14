@@ -49,6 +49,12 @@ MemberTab::MemberTab(GymData *data, QWidget *parent)
     editLevelCombo->addItems({"普通","白银","黄金","钻石"});
     QPushButton *editBtn = new QPushButton("修改会员");
     QPushButton *deleteBtn = new QPushButton("删除会员");
+    
+    // 积分调整功能
+    QLineEdit *pointsEdit = new QLineEdit();
+    pointsEdit->setPlaceholderText("输入积分数量");
+    QPushButton *addPointsBtn = new QPushButton("增加积分");
+    QPushButton *reducePointsBtn = new QPushButton("减少积分");
 
     editForm->addRow("卡号:", editIdEdit);
     editForm->addRow("姓名:", editNameEdit);
@@ -56,14 +62,17 @@ MemberTab::MemberTab(GymData *data, QWidget *parent)
     editForm->addRow("等级:", editLevelCombo);
     editForm->addRow(editBtn);
     editForm->addRow(deleteBtn);
+    editForm->addRow("积分调整:", pointsEdit);
+    editForm->addRow(addPointsBtn);
+    editForm->addRow(reducePointsBtn);
 
     leftLayout->addWidget(addGroup);
     leftLayout->addWidget(editGroup);
 
     // 会员列表
     table = new QTableWidget();
-    table->setColumnCount(4);
-    table->setHorizontalHeaderLabels({"卡号","姓名","有效期","等级"});
+    table->setColumnCount(5);
+    table->setHorizontalHeaderLabels({"卡号","姓名","有效期","等级","积分"});
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
@@ -113,7 +122,13 @@ MemberTab::MemberTab(GymData *data, QWidget *parent)
             QMessageBox::warning(this, "错误", "卡号和姓名不能为空！");
             return;
         }
-        Member m(editIdEdit->text(), editNameEdit->text(), editExpiryEdit->date(), editLevelCombo->currentText());
+        // 获取原会员的积分值
+        const auto &members = data->getMembers();
+        int points = 0;
+        if (selectedRow >= 0 && selectedRow < members.size()) {
+            points = members[selectedRow].points();
+        }
+        Member m(editIdEdit->text(), editNameEdit->text(), editExpiryEdit->date(), editLevelCombo->currentText(), points);
         if (!data->editMember(selectedRow, m)) {
             QMessageBox::warning(this, "错误", "该卡号已存在或编辑失败！");
             return;
@@ -136,6 +151,64 @@ MemberTab::MemberTab(GymData *data, QWidget *parent)
             QMessageBox::information(this, "成功", "会员删除成功！");
         }
     });
+    
+    // 增加积分
+    connect(addPointsBtn, &QPushButton::clicked, [=](){
+        int selectedRow = table->currentRow();
+        if (selectedRow < 0) {
+            QMessageBox::warning(this, "错误", "请先选择要调整积分的会员！");
+            return;
+        }
+        bool ok;
+        int points = pointsEdit->text().toInt(&ok);
+        if (!ok || points <= 0) {
+            QMessageBox::warning(this, "错误", "请输入有效的积分数量！");
+            return;
+        }
+        
+        auto &members = data->getMembers();
+        if (selectedRow >= 0 && selectedRow < members.size()) {
+            Member member = members[selectedRow];
+            member.addPoints(points);
+            if (data->editMember(selectedRow, member)) {
+                QMessageBox::information(this, "成功", "积分增加成功！");
+                pointsEdit->clear();
+            } else {
+                QMessageBox::warning(this, "错误", "积分增加失败！");
+            }
+        }
+    });
+    
+    // 减少积分
+    connect(reducePointsBtn, &QPushButton::clicked, [=](){
+        int selectedRow = table->currentRow();
+        if (selectedRow < 0) {
+            QMessageBox::warning(this, "错误", "请先选择要调整积分的会员！");
+            return;
+        }
+        bool ok;
+        int points = pointsEdit->text().toInt(&ok);
+        if (!ok || points <= 0) {
+            QMessageBox::warning(this, "错误", "请输入有效的积分数量！");
+            return;
+        }
+        
+        auto &members = data->getMembers();
+        if (selectedRow >= 0 && selectedRow < members.size()) {
+            Member member = members[selectedRow];
+            if (member.points() < points) {
+                QMessageBox::warning(this, "错误", "积分不足，无法减少！");
+                return;
+            }
+            member.reducePoints(points);
+            if (data->editMember(selectedRow, member)) {
+                QMessageBox::information(this, "成功", "积分减少成功！");
+                pointsEdit->clear();
+            } else {
+                QMessageBox::warning(this, "错误", "积分减少失败！");
+            }
+        }
+    });
 
     connect(data, &GymData::dataChanged, this, &MemberTab::refresh);
     refresh();
@@ -151,5 +224,6 @@ void MemberTab::refresh() {
         table->setItem(row, 1, new QTableWidgetItem(m.name()));
         table->setItem(row, 2, new QTableWidgetItem(m.expiryDate().toString("yyyy-MM-dd")));
         table->setItem(row, 3, new QTableWidgetItem(m.level()));
+        table->setItem(row, 4, new QTableWidgetItem(QString::number(m.points())));
     }
 }
