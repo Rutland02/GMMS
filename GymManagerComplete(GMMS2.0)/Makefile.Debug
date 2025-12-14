@@ -120,7 +120,7 @@ debug/GymManager.exe: D:/QT/5.14.2/mingw73_64/lib/libQt5Charts.a D:/QT/5.14.2/mi
 	$(LINKER) $(LFLAGS) -o $(DESTDIR_TARGET) @object_script.GymManager.Debug  $(LIBS)
 
 qmake: FORCE
-	@$(QMAKE) -o Makefile.Debug GymManager.pro -spec win32-g++
+	@$(QMAKE) -o Makefile.Debug GymManager.pro
 
 qmake_all: FORCE
 

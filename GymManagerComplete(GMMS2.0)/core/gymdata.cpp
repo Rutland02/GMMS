@@ -134,6 +134,9 @@ bool GymData::bookCourse(int mi, int ci, QString &err) {
 
     c.setCurrentBooked(c.currentBooked() + 1);
 
+    // 预约课程奖励积分
+    m.addPoints(5);
+
     checkins.push_front(CheckIn(
         m.cardId(),
         m.name(),
@@ -212,6 +215,9 @@ bool GymData::checkIn(int mi, int ci, QString &err) {
     }
     // 钻石会员无限制
 
+    // 签到奖励积分
+    m.addPoints(10);
+
     checkins.push_front(CheckIn(
         m.cardId(),
         m.name(),
@@ -235,6 +241,7 @@ bool GymData::saveToJson(const QString &filePath) {
         memberObj["name"] = member.name();
         memberObj["expiryDate"] = member.expiryDate().toString("yyyy-MM-dd");
         memberObj["level"] = member.level();
+        memberObj["points"] = member.points();
         membersArray.append(memberObj);
     }
     json["members"] = membersArray;
@@ -303,7 +310,8 @@ bool GymData::loadFromJson(const QString &filePath) {
         QString name = memberObj["name"].toString();
         QDate expiryDate = QDate::fromString(memberObj["expiryDate"].toString(), "yyyy-MM-dd");
         QString level = memberObj["level"].toString();
-        members.push_back(Member(cardId, name, expiryDate, level));
+        int points = memberObj["points"].toInt();
+        members.push_back(Member(cardId, name, expiryDate, level, points));
     }
     
     // 加载课程数据
@@ -360,6 +368,21 @@ int GymData::getExpiredMembers() const {
         }
     }
     return count;
+}
+
+int GymData::getTotalPoints() const {
+    int total = 0;
+    for (const auto &member : members) {
+        total += member.points();
+    }
+    return total;
+}
+
+double GymData::getAveragePoints() const {
+    if (members.isEmpty()) {
+        return 0.0;
+    }
+    return static_cast<double>(getTotalPoints()) / members.size();
 }
 
 QMap<QString, int> GymData::getMembersByLevel() const {

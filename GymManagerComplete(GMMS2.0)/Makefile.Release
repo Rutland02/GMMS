@@ -120,7 +120,7 @@ release/GymManager.exe: D:/QT/5.14.2/mingw73_64/lib/libQt5Charts.a D:/QT/5.14.2/
 	$(LINKER) $(LFLAGS) -o $(DESTDIR_TARGET) @object_script.GymManager.Release  $(LIBS)
 
 qmake: FORCE
-	@$(QMAKE) -o Makefile.Release GymManager.pro -spec win32-g++
+	@$(QMAKE) -o Makefile.Release GymManager.pro
 
 qmake_all: FORCE
 
