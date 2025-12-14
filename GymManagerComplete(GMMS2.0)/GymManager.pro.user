@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.11.1, 2025-12-02T13:46:38. -->
+<!-- Written by QtCreator 4.11.1, 2025-12-14T21:34:15. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -287,8 +287,9 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:F:/QtProgramFile/GymManagerComplete/GymManager.pro</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">F:/QtProgramFile/GymManagerComplete/GymManager.pro</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">GymManager2</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:F:/QtProgramFile/GMMS/GymManagerComplete(GMMS2.0)/GymManager.pro</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">F:/QtProgramFile/GMMS/GymManagerComplete(GMMS2.0)/GymManager.pro</value>
     <value type="QString" key="RunConfiguration.Arguments"></value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>

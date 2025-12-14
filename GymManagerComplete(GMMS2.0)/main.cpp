@@ -1,4 +1,4 @@
-#include "gymmainwindow.h"
+#include "ui/gymmainwindow.h"
 #include <QApplication>
 
 int main(int argc, char *argv[])
