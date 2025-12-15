@@ -2,12 +2,15 @@
 #include <QStringList>
 #include <Qt>
 
-Course::Course() : m_maxParticipants(0), m_currentBooked(0), m_price(0.0), m_dayOfWeek(-1) {}
+Course::Course() : m_maxParticipants(0), m_currentBooked(0), m_price(0.0), m_dayOfWeek(-1), 
+                   m_startDate(QDate::currentDate()), m_endDate(QDate::currentDate().addMonths(1)) {}
 
 Course::Course(const QString& id, const QString& name, const QString& courseType, const QString& description, const QString& coach, 
-               const QString& timeStr, double price, int maxParticipants, int currentBooked)
+               const QString& timeStr, double price, int maxParticipants, int currentBooked, 
+               const QDate& startDate, const QDate& endDate)
     : m_id(id), m_name(name), m_courseType(courseType), m_description(description), m_coach(coach), 
-      m_timeStr(timeStr), m_price(price), m_maxParticipants(maxParticipants), m_currentBooked(currentBooked), m_dayOfWeek(-1) {
+      m_timeStr(timeStr), m_price(price), m_maxParticipants(maxParticipants), m_currentBooked(currentBooked), m_dayOfWeek(-1), 
+      m_startDate(startDate), m_endDate(endDate) {
     parseTimeStr(timeStr);
 }
 
@@ -65,10 +68,11 @@ int Course::dayOfWeek() const {
 }
 
 void Course::setDayOfWeek(int day) {
-    m_dayOfWeek = day;
+    // 确保day在0-6范围内
+    m_dayOfWeek = qBound(0, day, 6);
     // 更新时间字符串
     QString dayStr;
-    switch(day) {
+    switch(m_dayOfWeek) {
         case 0: dayStr = "周一"; break;
         case 1: dayStr = "周二"; break;
         case 2: dayStr = "周三"; break;
@@ -76,7 +80,7 @@ void Course::setDayOfWeek(int day) {
         case 4: dayStr = "周五"; break;
         case 5: dayStr = "周六"; break;
         case 6: dayStr = "周日"; break;
-        default: dayStr = "周一";
+        default: dayStr = "周一"; // 理论上不会执行到这里
     }
     m_timeStr = QString("%1 %2").arg(dayStr).arg(m_timeSlot);
 }
@@ -123,11 +127,42 @@ int Course::currentBooked() const {
 }
 
 void Course::setCurrentBooked(int currentBooked) {
-    m_currentBooked = currentBooked;
+    // 确保当前预订人数不超过最大人数
+    m_currentBooked = qBound(0, currentBooked, m_maxParticipants);
 }
 
 bool Course::isFull() const {
-    return m_currentBooked >= m_maxParticipants;
+    // 如果maxParticipants为0，课程视为已满
+    return m_maxParticipants == 0 || m_currentBooked >= m_maxParticipants;
+}
+
+QDate Course::startDate() const {
+    return m_startDate;
+}
+
+void Course::setStartDate(const QDate& startDate) {
+    m_startDate = startDate;
+}
+
+QDate Course::endDate() const {
+    return m_endDate;
+}
+
+void Course::setEndDate(const QDate& endDate) {
+    m_endDate = endDate;
+}
+
+bool Course::isValid() const {
+    // 检查日期范围是否有效（开始日期不晚于结束日期，且两个日期都有效）
+    QDate now = QDate::currentDate();
+    return m_startDate.isValid() && m_endDate.isValid() && 
+           m_startDate <= m_endDate && 
+           now >= m_startDate && now <= m_endDate;
+}
+
+bool Course::isExpired() const {
+    // 检查课程是否已过期
+    return QDate::currentDate() > m_endDate;
 }
 
 void Course::parseTimeStr(const QString& timeStr) {

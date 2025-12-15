@@ -110,10 +110,16 @@ bool GymData::bookCourse(int mi, int ci, QString &err) {
     }
 
     auto &m = members[mi];
-    auto &c = courses[ci];
+    Course &c = courses[ci];
 
     if (m.isExpired()) {
         err = "会员卡已过期";
+        return false;
+    }
+
+    // 检查课程是否已过期
+    if (c.isExpired()) {
+        err = "该课程已过期";
         return false;
     }
 
@@ -185,10 +191,16 @@ bool GymData::checkIn(int mi, int ci, QString &err) {
     }
 
     auto &m = members[mi];
-    auto &c = courses[ci];
+    const Course &c = courses[ci];
 
     if (m.isExpired()) {
         err = "会员卡已过期";
+        return false;
+    }
+
+    // 检查课程是否已过期
+    if (c.isExpired()) {
+        err = "该课程已过期";
         return false;
     }
 
@@ -284,6 +296,8 @@ bool GymData::saveToJson(const QString &filePath) {
         courseObj["price"] = course.price();
         courseObj["maxParticipants"] = course.maxParticipants();
         courseObj["currentBooked"] = course.currentBooked();
+        courseObj["startDate"] = course.startDate().toString("yyyy-MM-dd");
+        courseObj["endDate"] = course.endDate().toString("yyyy-MM-dd");
         coursesArray.append(courseObj);
     }
     json["courses"] = coursesArray;
@@ -356,7 +370,9 @@ bool GymData::loadFromJson(const QString &filePath) {
         double price = courseObj["price"].toDouble();
         int maxParticipants = courseObj["maxParticipants"].toInt();
         int currentBooked = courseObj["currentBooked"].toInt();
-        courses.push_back(Course(id, name, courseType, description, coach, timeStr, price, maxParticipants, currentBooked));
+        QDate startDate = QDate::fromString(courseObj["startDate"].toString(), "yyyy-MM-dd");
+        QDate endDate = QDate::fromString(courseObj["endDate"].toString(), "yyyy-MM-dd");
+        courses.push_back(Course(id, name, courseType, description, coach, timeStr, price, maxParticipants, currentBooked, startDate, endDate));
     }
     
     // 加载签到记录

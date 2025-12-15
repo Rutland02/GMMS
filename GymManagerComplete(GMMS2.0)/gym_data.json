@@ -1,0 +1,68 @@
+{
+    "checkins": [
+    ],
+    "courses": [
+        {
+            "coach": "Lisa",
+            "courseType": "瑜伽",
+            "currentBooked": 0,
+            "description": "基础瑜伽课程，适合初学者",
+            "endDate": "2026-01-15",
+            "id": "C01",
+            "maxParticipants": 10,
+            "name": "瑜伽入门",
+            "price": 68,
+            "startDate": "2025-12-15",
+            "timeStr": "周一 10:00"
+        },
+        {
+            "coach": "Mike",
+            "courseType": "力量训练",
+            "currentBooked": 0,
+            "description": "高强度间歇训练，提高心肺功能",
+            "endDate": "2026-01-15",
+            "id": "C02",
+            "maxParticipants": 5,
+            "name": "高强度间歇(HIIT)",
+            "price": 88,
+            "startDate": "2025-12-15",
+            "timeStr": "周三 18:30"
+        },
+        {
+            "coach": "Sara",
+            "courseType": "有氧训练",
+            "currentBooked": 0,
+            "description": "动感单车课程，燃烧脂肪",
+            "endDate": "2026-01-15",
+            "id": "C03",
+            "maxParticipants": 20,
+            "name": "动感单车",
+            "price": 78,
+            "startDate": "2025-12-15",
+            "timeStr": "周五 19:00"
+        }
+    ],
+    "members": [
+        {
+            "cardId": "1001",
+            "expiryDate": "2026-12-15",
+            "level": "黄金",
+            "name": "张三",
+            "points": 0
+        },
+        {
+            "cardId": "1002",
+            "expiryDate": "2026-06-15",
+            "level": "普通",
+            "name": "李四",
+            "points": 0
+        },
+        {
+            "cardId": "1003",
+            "expiryDate": "2027-12-15",
+            "level": "钻石",
+            "name": "王五",
+            "points": 0
+        }
+    ]
+}

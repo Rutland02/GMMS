@@ -1116,19 +1116,23 @@ debug/course.o: model/course.cpp model/course.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qstringalgorithms.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qstringview.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qstringbuilder.h \
-		D:/QT/5.14.2/mingw73_64/include/QtCore/QStringList \
-		D:/QT/5.14.2/mingw73_64/include/QtCore/qstringlist.h \
+		D:/QT/5.14.2/mingw73_64/include/QtCore/QDate \
+		D:/QT/5.14.2/mingw73_64/include/QtCore/qdatetime.h \
+		D:/QT/5.14.2/mingw73_64/include/QtCore/qshareddata.h \
+		D:/QT/5.14.2/mingw73_64/include/QtCore/qhash.h \
+		D:/QT/5.14.2/mingw73_64/include/QtCore/qiterator.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qlist.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qalgorithms.h \
-		D:/QT/5.14.2/mingw73_64/include/QtCore/qiterator.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qhashfunctions.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qpair.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qvector.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qcontainertools_impl.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qpoint.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qbytearraylist.h \
+		D:/QT/5.14.2/mingw73_64/include/QtCore/qstringlist.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qregexp.h \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/qstringmatcher.h \
+		D:/QT/5.14.2/mingw73_64/include/QtCore/QStringList \
 		D:/QT/5.14.2/mingw73_64/include/QtCore/Qt
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug\course.o model\course.cpp
 
@@ -1739,7 +1743,18 @@ debug/coursetab.o: ui/coursetab.cpp ui/coursetab.h \
 		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qmessagebox.h \
 		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qdialog.h \
 		D:/QT/5.14.2/mingw73_64/include/QtWidgets/QGroupBox \
-		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qgroupbox.h
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qgroupbox.h \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/QTextEdit \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qtextedit.h \
+		D:/QT/5.14.2/mingw73_64/include/QtGui/qtextdocument.h \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/QComboBox \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qcombobox.h \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/QDialogButtonBox \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qdialogbuttonbox.h \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/QDoubleSpinBox \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/QDateEdit \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qdatetimeedit.h \
+		D:/QT/5.14.2/mingw73_64/include/QtCore/qcalendar.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug\coursetab.o ui\coursetab.cpp
 
 debug/bookingtab.o: ui/bookingtab.cpp ui/bookingtab.h \
