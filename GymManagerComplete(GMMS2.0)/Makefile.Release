@@ -1411,7 +1411,13 @@ release/gymmainwindow.o: ui/gymmainwindow.cpp ui/gymmainwindow.h \
 		D:/QT/5.14.2/mingw73_64/include/QtGui/QCloseEvent \
 		D:/QT/5.14.2/mingw73_64/include/QtWidgets/QMessageBox \
 		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qmessagebox.h \
-		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qdialog.h
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qdialog.h \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/QPushButton \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qpushbutton.h \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qabstractbutton.h \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/QHBoxLayout \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/QLabel \
+		D:/QT/5.14.2/mingw73_64/include/QtWidgets/qlabel.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o release\gymmainwindow.o ui\gymmainwindow.cpp
 
 release/membertab.o: ui/membertab.cpp ui/membertab.h \
