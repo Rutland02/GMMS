@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QTabWidget>
+#include <QPushButton>
 
 class GymData;
 class MemberTab;
@@ -19,8 +20,13 @@ public:
 protected:
     void closeEvent(QCloseEvent *event) override;
 
+private slots:
+    void toggleTheme();
+
 private:
     void applyStyles();
+    QString getLightTheme();
+    QString getDarkTheme();
 
     GymData *data;
     QTabWidget *tabs;
@@ -30,6 +36,9 @@ private:
     BookingTab *bookingTab;
     QueryTab *queryTab;
     StatisticsTab *statisticsTab;
+    
+    bool isDarkTheme;
+    QPushButton *themeToggleBtn;
 };
 
 #endif // GYMMAINWINDOW_H
