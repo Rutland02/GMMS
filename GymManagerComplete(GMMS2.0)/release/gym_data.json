@@ -1,0 +1,50 @@
+{
+    "checkins": [
+    ],
+    "courses": [
+        {
+            "coach": "Lisa",
+            "currentBooked": 0,
+            "id": "C01",
+            "maxParticipants": 10,
+            "name": "瑜伽入门",
+            "timeStr": "周一 10:00"
+        },
+        {
+            "coach": "Mike",
+            "currentBooked": 0,
+            "id": "C02",
+            "maxParticipants": 5,
+            "name": "高强度间歇(HIIT)",
+            "timeStr": "周三 18:30"
+        },
+        {
+            "coach": "Sara",
+            "currentBooked": 0,
+            "id": "C03",
+            "maxParticipants": 20,
+            "name": "动感单车",
+            "timeStr": "周五 19:00"
+        }
+    ],
+    "members": [
+        {
+            "cardId": "1001",
+            "expiryDate": "2026-12-15",
+            "level": "黄金",
+            "name": "张三"
+        },
+        {
+            "cardId": "1002",
+            "expiryDate": "2026-06-15",
+            "level": "普通",
+            "name": "李四"
+        },
+        {
+            "cardId": "1003",
+            "expiryDate": "2027-12-15",
+            "level": "钻石",
+            "name": "王五"
+        }
+    ]
+}
