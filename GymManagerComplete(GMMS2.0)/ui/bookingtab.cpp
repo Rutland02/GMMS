@@ -71,7 +71,16 @@ void BookingTab::refresh()
     }
     courseCombo->clear();
     for (const auto &c : data->getCourses()) {
-        courseCombo->addItem(QString("%1 - %2 (%3)").arg(c.name()).arg(c.coach()).arg(c.timeStr()));
+        if (!c.isExpired()) { // 只显示未过期的课程
+            // 添加课程状态信息
+            QString status;
+            if (c.isFull()) {
+                status = "[已满]";
+            } else {
+                status = "[可预约]";
+            }
+            courseCombo->addItem(QString("%1 - %2 (%3) %4").arg(c.name()).arg(c.coach()).arg(c.timeStr()).arg(status));
+        }
     }
 
     // fill records table

@@ -9,6 +9,11 @@
 #include <QHeaderView>
 #include <QMessageBox>
 #include <QGroupBox>
+#include <QTextEdit>
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QDoubleSpinBox>
+#include <QDateEdit>
 
 CourseTab::CourseTab(GymData *data, QWidget *parent)
     : QWidget(parent), data(data)
@@ -34,6 +39,12 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
     QSpinBox *maxSpin = new QSpinBox();
     maxSpin->setRange(1,100);
     maxSpin->setValue(10);
+    QDateEdit *startDateEdit = new QDateEdit();
+    startDateEdit->setDate(QDate::currentDate());
+    startDateEdit->setCalendarPopup(true);
+    QDateEdit *endDateEdit = new QDateEdit();
+    endDateEdit->setDate(QDate::currentDate().addMonths(1));
+    endDateEdit->setCalendarPopup(true);
     QPushButton *addBtn = new QPushButton("添加课程");
 
     form->addRow("课程名称:", nameEdit);
@@ -43,6 +54,8 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
     form->addRow("时间:", timeEdit);
     form->addRow("价格:", priceSpin);
     form->addRow("最大人数:", maxSpin);
+    form->addRow("开始日期:", startDateEdit);
+    form->addRow("结束日期:", endDateEdit);
     form->addRow(addBtn);
 
     QGroupBox *editGroup = new QGroupBox("编辑课程", leftWidget);
@@ -80,8 +93,8 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
     leftLayout->addWidget(searchGroup);
 
     table = new QTableWidget();
-    table->setColumnCount(8);
-    table->setHorizontalHeaderLabels({"课程ID","课程名称","类型","教练","时间","价格","人数(当前/最大)","状态"});
+    table->setColumnCount(9);
+    table->setHorizontalHeaderLabels({"课程ID","课程名称","类型","教练","时间","价格","人数(当前/最大)","有效期","状态"});
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
@@ -93,9 +106,19 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
             QMessageBox::warning(this, "错误", "课程名称不能为空！");
             return;
         }
+        
+        QDate startDate = startDateEdit->date();
+        QDate endDate = endDateEdit->date();
+        
+        if (startDate > endDate) {
+            QMessageBox::warning(this, "错误", "开始日期不能晚于结束日期！");
+            return;
+        }
+        
         QString id = QString("C%1").arg(data->getCourses().size() + 1, 2, 10, QChar('0'));
         Course c(id, nameEdit->text(), courseTypeEdit->text(), descriptionEdit->toPlainText(), 
-                 coachEdit->text(), timeEdit->text(), priceSpin->value(), maxSpin->value(), 0);
+                 coachEdit->text(), timeEdit->text(), priceSpin->value(), maxSpin->value(), 0, 
+                 startDate, endDate);
         if (!data->addCourse(c)) {
             QMessageBox::warning(this, "错误", "课程 ID 冲突！");
             return;
@@ -105,6 +128,8 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
         descriptionEdit->clear();
         coachEdit->clear();
         timeEdit->clear();
+        startDateEdit->setDate(QDate::currentDate());
+        endDateEdit->setDate(QDate::currentDate().addMonths(1));
         QMessageBox::information(this, "成功", "课程发布成功！");
     });
 
@@ -140,6 +165,10 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
         QSpinBox *editMax = new QSpinBox();
         editMax->setRange(1, 100);
         editMax->setValue(course.maxParticipants());
+        QDateEdit *editStartDate = new QDateEdit(course.startDate());
+        editStartDate->setCalendarPopup(true);
+        QDateEdit *editEndDate = new QDateEdit(course.endDate());
+        editEndDate->setCalendarPopup(true);
 
         editForm->addRow("课程名称:", editName);
         editForm->addRow("课程类型:", editCourseType);
@@ -148,6 +177,8 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
         editForm->addRow("时间:", editTime);
         editForm->addRow("价格:", editPrice);
         editForm->addRow("最大人数:", editMax);
+        editForm->addRow("开始日期:", editStartDate);
+        editForm->addRow("结束日期:", editEndDate);
 
         QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, editDialog);
         editForm->addRow(buttonBox);
@@ -157,11 +188,19 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
                 QMessageBox::warning(this, "错误", "课程名称不能为空！");
                 return;
             }
+            
+            QDate startDate = editStartDate->date();
+            QDate endDate = editEndDate->date();
+            
+            if (startDate > endDate) {
+                QMessageBox::warning(this, "错误", "开始日期不能晚于结束日期！");
+                return;
+            }
 
             Course updatedCourse(course.id(), editName->text(), editCourseType->text(), 
                                 editDescription->toPlainText(), editCoach->text(), 
                                 editTime->text(), editPrice->value(), editMax->value(), 
-                                course.currentBooked());
+                                course.currentBooked(), startDate, endDate);
 
             if (data->editCourse(selectedRow, updatedCourse)) {
                 QMessageBox::information(this, "成功", "课程编辑成功！");
@@ -247,17 +286,21 @@ connect(searchBtn, &QPushButton::clicked, this, [=](){
         table->setItem(row, 4, new QTableWidgetItem(course->timeStr()));
         table->setItem(row, 5, new QTableWidgetItem(QString("¥%1").arg(course->price())));
         table->setItem(row, 6, new QTableWidgetItem(QString("%1 / %2").arg(course->currentBooked()).arg(course->maxParticipants())));
+        table->setItem(row, 7, new QTableWidgetItem(QString("%1 - %2").arg(course->startDate().toString("yyyy-MM-dd")).arg(course->endDate().toString("yyyy-MM-dd"))));
         
         // 显示课程状态
         QTableWidgetItem *statusItem = new QTableWidgetItem();
-        if (course->isFull()) {
+        if (course->isExpired()) {
+            statusItem->setText("已过期");
+            statusItem->setForeground(Qt::gray);
+        } else if (course->isFull()) {
             statusItem->setText("已满");
-            statusItem->setTextColor(Qt::red);
+            statusItem->setForeground(Qt::red);
         } else {
             statusItem->setText("可预约");
-            statusItem->setTextColor(Qt::green);
+            statusItem->setForeground(Qt::green);
         }
-        table->setItem(row, 7, statusItem);
+        table->setItem(row, 8, statusItem);
     }
 
     QMessageBox::information(this, "搜索结果", QString("找到 %1 门符合条件的课程！").arg(filteredCourses.size()));
@@ -286,16 +329,20 @@ void CourseTab::refresh() {
         table->setItem(row, 4, new QTableWidgetItem(c.timeStr()));
         table->setItem(row, 5, new QTableWidgetItem(QString("¥%1").arg(c.price())));
         table->setItem(row, 6, new QTableWidgetItem(QString("%1 / %2").arg(c.currentBooked()).arg(c.maxParticipants())));
+        table->setItem(row, 7, new QTableWidgetItem(QString("%1 - %2").arg(c.startDate().toString("yyyy-MM-dd")).arg(c.endDate().toString("yyyy-MM-dd"))));
         
         // 显示课程状态
         QTableWidgetItem *statusItem = new QTableWidgetItem();
-        if (c.isFull()) {
+        if (c.isExpired()) {
+            statusItem->setText("已过期");
+            statusItem->setForeground(Qt::gray);
+        } else if (c.isFull()) {
             statusItem->setText("已满");
-            statusItem->setTextColor(Qt::red);
+            statusItem->setForeground(Qt::red);
         } else {
             statusItem->setText("可预约");
-            statusItem->setTextColor(Qt::green);
+            statusItem->setForeground(Qt::green);
         }
-        table->setItem(row, 7, statusItem);
+        table->setItem(row, 8, statusItem);
     }
 }
