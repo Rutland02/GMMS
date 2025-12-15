@@ -20,6 +20,8 @@ public:
     bool editMember(int index, const Member& newMember);
     bool deleteMember(int index);
     bool addCourse(const Course&);
+    bool editCourse(int index, const Course& newCourse);
+    bool deleteCourse(int index);
     bool bookCourse(int,int,QString&);
     bool checkIn(int,int,QString&);
     bool loadFromJson(const QString& filePath);

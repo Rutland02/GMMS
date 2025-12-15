@@ -12,9 +12,9 @@ GymData::GymData(QObject *parent) : QObject(parent)
     members.push_back(Member("1002", "李四", QDate::currentDate().addMonths(6), "普通"));
     members.push_back(Member("1003", "王五", QDate::currentDate().addYears(2), "钻石"));
 
-    courses.push_back(Course("C01", "瑜伽入门", "Lisa", "周一 10:00", 10, 0));
-    courses.push_back(Course("C02", "高强度间歇(HIIT)", "Mike", "周三 18:30", 5, 0));
-    courses.push_back(Course("C03", "动感单车", "Sara", "周五 19:00", 20, 0));
+    courses.push_back(Course("C01", "瑜伽入门", "瑜伽", "基础瑜伽课程，适合初学者", "Lisa", "周一 10:00", 68.0, 10, 0));
+    courses.push_back(Course("C02", "高强度间歇(HIIT)", "力量训练", "高强度间歇训练，提高心肺功能", "Mike", "周三 18:30", 88.0, 5, 0));
+    courses.push_back(Course("C03", "动感单车", "有氧训练", "动感单车课程，燃烧脂肪", "Sara", "周五 19:00", 78.0, 20, 0));
 }
 
 const QVector<Member>& GymData::getMembers() const {
@@ -70,6 +70,31 @@ bool GymData::addCourse(const Course &c) {
             return false;
 
     courses.push_back(c);
+    emit dataChanged();
+    return true;
+}
+
+bool GymData::editCourse(int index, const Course &newCourse) {
+    if (index < 0 || index >= courses.size())
+        return false;
+    
+    // 如果修改了课程ID，需要检查新ID是否已存在
+    if (courses[index].id() != newCourse.id()) {
+        for (const auto &x : courses)
+            if (x.id() == newCourse.id())
+                return false;
+    }
+    
+    courses[index] = newCourse;
+    emit dataChanged();
+    return true;
+}
+
+bool GymData::deleteCourse(int index) {
+    if (index < 0 || index >= courses.size())
+        return false;
+    
+    courses.removeAt(index);
     emit dataChanged();
     return true;
 }
@@ -252,8 +277,11 @@ bool GymData::saveToJson(const QString &filePath) {
         QJsonObject courseObj;
         courseObj["id"] = course.id();
         courseObj["name"] = course.name();
+        courseObj["courseType"] = course.courseType();
+        courseObj["description"] = course.description();
         courseObj["coach"] = course.coach();
         courseObj["timeStr"] = course.timeStr();
+        courseObj["price"] = course.price();
         courseObj["maxParticipants"] = course.maxParticipants();
         courseObj["currentBooked"] = course.currentBooked();
         coursesArray.append(courseObj);
@@ -321,11 +349,14 @@ bool GymData::loadFromJson(const QString &filePath) {
         QJsonObject courseObj = courseValue.toObject();
         QString id = courseObj["id"].toString();
         QString name = courseObj["name"].toString();
+        QString courseType = courseObj["courseType"].toString();
+        QString description = courseObj["description"].toString();
         QString coach = courseObj["coach"].toString();
         QString timeStr = courseObj["timeStr"].toString();
+        double price = courseObj["price"].toDouble();
         int maxParticipants = courseObj["maxParticipants"].toInt();
         int currentBooked = courseObj["currentBooked"].toInt();
-        courses.push_back(Course(id, name, coach, timeStr, maxParticipants, currentBooked));
+        courses.push_back(Course(id, name, courseType, description, coach, timeStr, price, maxParticipants, currentBooked));
     }
     
     // 加载签到记录
