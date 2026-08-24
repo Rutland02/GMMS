@@ -98,9 +98,13 @@ MemberTab::MemberTab(GymData *data, QWidget *parent)
     // 选择表格行时自动填充编辑表单
     connect(table, &QTableWidget::cellClicked, [=](int row, int col){
         Q_UNUSED(col);
-        const auto &members = data->getMembers();
-        if (row >= 0 && row < members.size()) {
-            const Member &m = members[row];
+        if (row >= 0 && row < table->rowCount() && table->item(row, 0)) {
+            const QString cardId = table->item(row, 0)->data(Qt::UserRole).toString();
+            const int memberIndex = data->findMemberIndex(cardId);
+            if (memberIndex < 0) {
+                return;
+            }
+            const Member &m = data->getMembers()[memberIndex];
             editIdEdit->setText(m.cardId());
             editNameEdit->setText(m.name());
             editExpiryEdit->setDate(m.expiryDate());
@@ -123,13 +127,14 @@ MemberTab::MemberTab(GymData *data, QWidget *parent)
             return;
         }
         // 获取原会员的积分值
-        const auto &members = data->getMembers();
+        const QString originalCardId = table->item(selectedRow, 0)->data(Qt::UserRole).toString();
+        const int memberIndex = data->findMemberIndex(originalCardId);
         int points = 0;
-        if (selectedRow >= 0 && selectedRow < members.size()) {
-            points = members[selectedRow].points();
+        if (memberIndex >= 0) {
+            points = data->getMembers()[memberIndex].points();
         }
         Member m(editIdEdit->text(), editNameEdit->text(), editExpiryEdit->date(), editLevelCombo->currentText(), points);
-        if (!data->editMember(selectedRow, m)) {
+        if (!data->editMember(originalCardId, m)) {
             QMessageBox::warning(this, "错误", "该卡号已存在或编辑失败！");
             return;
         }
@@ -144,7 +149,8 @@ MemberTab::MemberTab(GymData *data, QWidget *parent)
             return;
         }
         if (QMessageBox::question(this, "确认", "确定要删除选中的会员吗？") == QMessageBox::Yes) {
-            if (!data->deleteMember(selectedRow)) {
+            const QString cardId = table->item(selectedRow, 0)->data(Qt::UserRole).toString();
+            if (!data->deleteMember(cardId)) {
                 QMessageBox::warning(this, "错误", "删除会员失败！");
                 return;
             }
@@ -166,11 +172,12 @@ MemberTab::MemberTab(GymData *data, QWidget *parent)
             return;
         }
         
-        auto &members = data->getMembers();
-        if (selectedRow >= 0 && selectedRow < members.size()) {
-            Member member = members[selectedRow];
+        const QString cardId = table->item(selectedRow, 0)->data(Qt::UserRole).toString();
+        const int memberIndex = data->findMemberIndex(cardId);
+        if (memberIndex >= 0) {
+            Member member = data->getMembers()[memberIndex];
             member.addPoints(points);
-            if (data->editMember(selectedRow, member)) {
+            if (data->editMember(cardId, member)) {
                 QMessageBox::information(this, "成功", "积分增加成功！");
                 pointsEdit->clear();
             } else {
@@ -193,15 +200,16 @@ MemberTab::MemberTab(GymData *data, QWidget *parent)
             return;
         }
         
-        auto &members = data->getMembers();
-        if (selectedRow >= 0 && selectedRow < members.size()) {
-            Member member = members[selectedRow];
+        const QString cardId = table->item(selectedRow, 0)->data(Qt::UserRole).toString();
+        const int memberIndex = data->findMemberIndex(cardId);
+        if (memberIndex >= 0) {
+            Member member = data->getMembers()[memberIndex];
             if (member.points() < points) {
                 QMessageBox::warning(this, "错误", "积分不足，无法减少！");
                 return;
             }
             member.reducePoints(points);
-            if (data->editMember(selectedRow, member)) {
+            if (data->editMember(cardId, member)) {
                 QMessageBox::information(this, "成功", "积分减少成功！");
                 pointsEdit->clear();
             } else {
@@ -220,7 +228,9 @@ void MemberTab::refresh() {
     for (const auto &m : members) {
         int row = table->rowCount();
         table->insertRow(row);
-        table->setItem(row, 0, new QTableWidgetItem(m.cardId()));
+        QTableWidgetItem *cardItem = new QTableWidgetItem(m.cardId());
+        cardItem->setData(Qt::UserRole, m.cardId());
+        table->setItem(row, 0, cardItem);
         table->setItem(row, 1, new QTableWidgetItem(m.name()));
         table->setItem(row, 2, new QTableWidgetItem(m.expiryDate().toString("yyyy-MM-dd")));
         table->setItem(row, 3, new QTableWidgetItem(m.level()));

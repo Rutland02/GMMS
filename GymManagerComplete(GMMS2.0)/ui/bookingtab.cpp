@@ -47,15 +47,15 @@ BookingTab::BookingTab(GymData *data, QWidget *parent)
 
 void BookingTab::handleBooking(bool isBooking)
 {
-    int mIdx = memberCombo->currentIndex();
-    int cIdx = courseCombo->currentIndex();
+    const QString memberId = memberCombo->currentData().toString();
+    const QString courseId = courseCombo->currentData().toString();
     QString err;
-    if (mIdx < 0 || cIdx < 0) {
+    if (memberId.isEmpty() || courseId.isEmpty()) {
         QMessageBox::warning(this, "提示", "请先选择会员和课程");
         return;
     }
 
-    bool ok = isBooking ? data->bookCourse(mIdx, cIdx, err) : data->checkIn(mIdx, cIdx, err);
+    bool ok = isBooking ? data->bookCourse(memberId, courseId, err) : data->checkIn(memberId, courseId, err);
     if (!ok) {
         QMessageBox::warning(this, "失败", err);
         return;
@@ -67,7 +67,7 @@ void BookingTab::refresh()
 {
     memberCombo->clear();
     for (const auto &m : data->getMembers()) {
-        memberCombo->addItem(QString("%1 - %2 (%3)").arg(m.cardId()).arg(m.name()).arg(m.level()));
+        memberCombo->addItem(QString("%1 - %2 (%3)").arg(m.cardId()).arg(m.name()).arg(m.level()), m.cardId());
     }
     courseCombo->clear();
     for (const auto &c : data->getCourses()) {
@@ -79,7 +79,7 @@ void BookingTab::refresh()
             } else {
                 status = "[可预约]";
             }
-            courseCombo->addItem(QString("%1 - %2 (%3) %4").arg(c.name()).arg(c.coach()).arg(c.timeStr()).arg(status));
+            courseCombo->addItem(QString("%1 - %2 (%3) %4").arg(c.name()).arg(c.coach()).arg(c.timeStr()).arg(status), c.id());
         }
     }
 

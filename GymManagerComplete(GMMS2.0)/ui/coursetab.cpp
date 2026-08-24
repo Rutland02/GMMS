@@ -14,6 +14,17 @@
 #include <QDialogButtonBox>
 #include <QDoubleSpinBox>
 #include <QDateEdit>
+#include <QTime>
+#include <QStringList>
+
+namespace {
+bool isValidWeekday(const QString &weekday)
+{
+    return weekday == "周一" || weekday == "周二" || weekday == "周三" ||
+           weekday == "周四" || weekday == "周五" || weekday == "周六" ||
+           weekday == "周日";
+}
+}
 
 CourseTab::CourseTab(GymData *data, QWidget *parent)
     : QWidget(parent), data(data)
@@ -114,8 +125,15 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
             QMessageBox::warning(this, "错误", "开始日期不能晚于结束日期！");
             return;
         }
+
+        const QStringList timeParts = timeEdit->text().trimmed().split(' ', Qt::SkipEmptyParts);
+        if (timeParts.size() != 2 || !isValidWeekday(timeParts.at(0)) ||
+            !QTime::fromString(timeParts.at(1), "HH:mm").isValid()) {
+            QMessageBox::warning(this, "错误", "时间格式应为“周一 10:00”！");
+            return;
+        }
         
-        QString id = QString("C%1").arg(data->getCourses().size() + 1, 2, 10, QChar('0'));
+        const QString id = data->nextCourseId();
         Course c(id, nameEdit->text(), courseTypeEdit->text(), descriptionEdit->toPlainText(), 
                  coachEdit->text(), timeEdit->text(), priceSpin->value(), maxSpin->value(), 0, 
                  startDate, endDate);
@@ -140,13 +158,18 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
             return;
         }
 
-        const auto &courses = data->getCourses();
-        if (selectedRow >= courses.size()) {
+        if (!table->item(selectedRow, 0)) {
             QMessageBox::warning(this, "错误", "无效的课程选择！");
             return;
         }
 
-        const Course &course = courses[selectedRow];
+        const QString courseId = table->item(selectedRow, 0)->data(Qt::UserRole).toString();
+        const int courseIndex = data->findCourseIndex(courseId);
+        if (courseIndex < 0) {
+            QMessageBox::warning(this, "错误", "课程已不存在，请刷新后重试！");
+            return;
+        }
+        const Course &course = data->getCourses()[courseIndex];
 
         // 创建编辑对话框
         QDialog *editDialog = new QDialog(this);
@@ -197,12 +220,23 @@ CourseTab::CourseTab(GymData *data, QWidget *parent)
                 return;
             }
 
+            const QStringList timeParts = editTime->text().trimmed().split(' ', Qt::SkipEmptyParts);
+            if (timeParts.size() != 2 || !isValidWeekday(timeParts.at(0)) ||
+                !QTime::fromString(timeParts.at(1), "HH:mm").isValid()) {
+                QMessageBox::warning(this, "错误", "时间格式应为“周一 10:00”！");
+                return;
+            }
+            if (editMax->value() < course.currentBooked()) {
+                QMessageBox::warning(this, "错误", "最大人数不能小于当前预约人数！");
+                return;
+            }
+
             Course updatedCourse(course.id(), editName->text(), editCourseType->text(), 
                                 editDescription->toPlainText(), editCoach->text(), 
                                 editTime->text(), editPrice->value(), editMax->value(), 
                                 course.currentBooked(), startDate, endDate);
 
-            if (data->editCourse(selectedRow, updatedCourse)) {
+            if (data->editCourse(courseId, updatedCourse)) {
                 QMessageBox::information(this, "成功", "课程编辑成功！");
                 editDialog->accept();
             } else {
@@ -222,20 +256,25 @@ connect(deleteBtn, &QPushButton::clicked, this, [=](){
         return;
     }
 
-    const auto &courses = data->getCourses();
-    if (selectedRow >= courses.size()) {
+    if (!table->item(selectedRow, 0)) {
         QMessageBox::warning(this, "错误", "无效的课程选择！");
         return;
     }
 
-    const Course &course = courses[selectedRow];
+    const QString courseId = table->item(selectedRow, 0)->data(Qt::UserRole).toString();
+    const int courseIndex = data->findCourseIndex(courseId);
+    if (courseIndex < 0) {
+        QMessageBox::warning(this, "错误", "课程已不存在，请刷新后重试！");
+        return;
+    }
+    const Course &course = data->getCourses()[courseIndex];
     if (QMessageBox::question(this, "确认删除", 
                              QString("确定要删除课程 '%1' 吗？\n该操作不可恢复！").arg(course.name()),
                              QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
         return;
     }
 
-    if (data->deleteCourse(selectedRow)) {
+    if (data->deleteCourse(courseId)) {
         QMessageBox::information(this, "成功", "课程删除成功！");
     } else {
         QMessageBox::warning(this, "错误", "课程删除失败！");
@@ -279,7 +318,9 @@ connect(searchBtn, &QPushButton::clicked, this, [=](){
     for (const auto &course : filteredCourses) {
         int row = table->rowCount();
         table->insertRow(row);
-        table->setItem(row, 0, new QTableWidgetItem(course->id()));
+        QTableWidgetItem *idItem = new QTableWidgetItem(course->id());
+        idItem->setData(Qt::UserRole, course->id());
+        table->setItem(row, 0, idItem);
         table->setItem(row, 1, new QTableWidgetItem(course->name()));
         table->setItem(row, 2, new QTableWidgetItem(course->courseType()));
         table->setItem(row, 3, new QTableWidgetItem(course->coach()));
@@ -322,7 +363,9 @@ void CourseTab::refresh() {
     for (const auto &c : courses) {
         int row = table->rowCount();
         table->insertRow(row);
-        table->setItem(row, 0, new QTableWidgetItem(c.id()));
+        QTableWidgetItem *idItem = new QTableWidgetItem(c.id());
+        idItem->setData(Qt::UserRole, c.id());
+        table->setItem(row, 0, idItem);
         table->setItem(row, 1, new QTableWidgetItem(c.name()));
         table->setItem(row, 2, new QTableWidgetItem(c.courseType()));
         table->setItem(row, 3, new QTableWidgetItem(c.coach()));

@@ -13,6 +13,18 @@
 #include <QTextStream>
 #include <QMessageBox>
 
+namespace {
+QString csvEscape(const QString &value)
+{
+    QString escaped = value;
+    escaped.replace('"', "\"\"");
+    if (escaped.contains(',') || escaped.contains('"') || escaped.contains('\n') || escaped.contains('\r')) {
+        escaped = QString("\"%1\"").arg(escaped);
+    }
+    return escaped;
+}
+}
+
 QueryTab::QueryTab(GymData *data, QWidget *parent)
     : QWidget(parent), data(data)
 {
@@ -124,6 +136,7 @@ void QueryTab::exportData()
     }
     
     QTextStream out(&file);
+    out << QChar(0xFEFF); // 让 Excel 更容易正确识别中文编码
     // 写入表头
     out << "时间,类型,会员ID,会员姓名,课程名称\n";
     
@@ -131,12 +144,7 @@ void QueryTab::exportData()
     for (int row = 0; row < recordTable->rowCount(); ++row) {
         for (int col = 0; col < recordTable->columnCount(); ++col) {
             if (col > 0) out << ",";
-            QString text = recordTable->item(row, col)->text();
-            // 处理包含逗号的文本
-            if (text.contains(",")) {
-                text = QString("\"%1\"").arg(text);
-            }
-            out << text;
+            out << csvEscape(recordTable->item(row, col)->text());
         }
         out << "\n";
     }

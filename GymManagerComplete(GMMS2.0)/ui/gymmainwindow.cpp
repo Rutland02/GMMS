@@ -357,8 +357,15 @@ void GymMainWindow::closeEvent(QCloseEvent *event) {
     const QString dataFile = "gym_data.json";
     if (data->saveToJson(dataFile)) {
         QMessageBox::information(this, "成功", "数据已保存！");
+        event->accept();
     } else {
-        QMessageBox::warning(this, "警告", "数据保存失败！");
+        const QMessageBox::StandardButton answer = QMessageBox::warning(
+            this, "保存失败", "数据保存失败，仍然退出程序吗？",
+            QMessageBox::Retry | QMessageBox::Discard, QMessageBox::Retry);
+        if (answer == QMessageBox::Retry) {
+            closeEvent(event);
+            return;
+        }
+        event->accept();
     }
-    event->accept();
 }

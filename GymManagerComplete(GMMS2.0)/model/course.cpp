@@ -119,7 +119,10 @@ int Course::maxParticipants() const {
 }
 
 void Course::setMaxParticipants(int maxParticipants) {
-    m_maxParticipants = maxParticipants;
+    m_maxParticipants = qMax(1, maxParticipants);
+    if (m_currentBooked > m_maxParticipants) {
+        m_currentBooked = m_maxParticipants;
+    }
 }
 
 int Course::currentBooked() const {

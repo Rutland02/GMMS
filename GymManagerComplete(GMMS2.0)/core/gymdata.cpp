@@ -5,6 +5,9 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QJsonParseError>
+#include <QSaveFile>
+#include <QRegularExpression>
 
 GymData::GymData(QObject *parent) : QObject(parent)
 {
@@ -39,8 +42,39 @@ bool GymData::addMember(const Member &m) {
     return true;
 }
 
-bool GymData::editMember(int index, const Member &newMember) {
-    if (index < 0 || index >= members.size())
+int GymData::findMemberIndex(const QString &cardId) const {
+    for (int i = 0; i < members.size(); ++i) {
+        if (members[i].cardId() == cardId) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int GymData::findCourseIndex(const QString &courseId) const {
+    for (int i = 0; i < courses.size(); ++i) {
+        if (courses[i].id() == courseId) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+QString GymData::nextCourseId() const {
+    int maxId = 0;
+    static const QRegularExpression pattern("^C(\\d+)$");
+    for (const auto &course : courses) {
+        const QRegularExpressionMatch match = pattern.match(course.id());
+        if (match.hasMatch()) {
+            maxId = qMax(maxId, match.captured(1).toInt());
+        }
+    }
+    return QString("C%1").arg(maxId + 1, 2, 10, QChar('0'));
+}
+
+bool GymData::editMember(const QString &cardId, const Member &newMember) {
+    const int index = findMemberIndex(cardId);
+    if (index < 0)
         return false;
     
     // 如果修改了卡号，需要检查新卡号是否已存在
@@ -51,12 +85,20 @@ bool GymData::editMember(int index, const Member &newMember) {
     }
     
     members[index] = newMember;
+    if (cardId != newMember.cardId()) {
+        for (auto &checkin : checkins) {
+            if (checkin.memberId() == cardId) {
+                checkin.setMemberId(newMember.cardId());
+            }
+        }
+    }
     emit dataChanged();
     return true;
 }
 
-bool GymData::deleteMember(int index) {
-    if (index < 0 || index >= members.size())
+bool GymData::deleteMember(const QString &cardId) {
+    const int index = findMemberIndex(cardId);
+    if (index < 0)
         return false;
     
     members.removeAt(index);
@@ -74,8 +116,9 @@ bool GymData::addCourse(const Course &c) {
     return true;
 }
 
-bool GymData::editCourse(int index, const Course &newCourse) {
-    if (index < 0 || index >= courses.size())
+bool GymData::editCourse(const QString &courseId, const Course &newCourse) {
+    const int index = findCourseIndex(courseId);
+    if (index < 0)
         return false;
     
     // 如果修改了课程ID，需要检查新ID是否已存在
@@ -86,12 +129,20 @@ bool GymData::editCourse(int index, const Course &newCourse) {
     }
     
     courses[index] = newCourse;
+    if (courseId != newCourse.id()) {
+        for (auto &checkin : checkins) {
+            if (checkin.courseId() == courseId) {
+                checkin.setCourseId(newCourse.id());
+            }
+        }
+    }
     emit dataChanged();
     return true;
 }
 
-bool GymData::deleteCourse(int index) {
-    if (index < 0 || index >= courses.size())
+bool GymData::deleteCourse(const QString &courseId) {
+    const int index = findCourseIndex(courseId);
+    if (index < 0)
         return false;
     
     courses.removeAt(index);
@@ -99,13 +150,15 @@ bool GymData::deleteCourse(int index) {
     return true;
 }
 
-bool GymData::bookCourse(int mi, int ci, QString &err) {
-    if (mi < 0 || mi >= members.size()) {
-        err = "无效的会员索引";
+bool GymData::bookCourse(const QString &memberId, const QString &courseId, QString &err) {
+    const int mi = findMemberIndex(memberId);
+    const int ci = findCourseIndex(courseId);
+    if (mi < 0) {
+        err = "无效的会员卡号";
         return false;
     }
-    if (ci < 0 || ci >= courses.size()) {
-        err = "无效的课程索引";
+    if (ci < 0) {
+        err = "无效的课程 ID";
         return false;
     }
 
@@ -125,21 +178,17 @@ bool GymData::bookCourse(int mi, int ci, QString &err) {
 
     // 检查是否已预约该课程
     for (const auto &checkin : checkins) {
-        if (checkin.memberId() == m.cardId() && 
-            checkin.courseName() == c.name() && 
+        if (checkin.memberId() == m.cardId() &&
+            (checkin.courseId() == c.id() ||
+             (checkin.courseId().isEmpty() && checkin.courseName() == c.name())) &&
             checkin.type() == "预约") {
             err = "该会员已预约此课程";
             return false;
         }
     }
 
-    // 权限检查和预约限制
-    int maxAllowed = c.maxParticipants();
-    if (m.level() == "钻石") {
-        maxAllowed += 1; // 钻石会员可超额预约1个名额
-    }
-    
-    if (c.currentBooked() >= maxAllowed) {
+    // 预约容量是课程的硬上限，会员等级只影响个人预约数量。
+    if (c.currentBooked() >= c.maxParticipants()) {
         err = "课程人数已满";
         return false;
     }
@@ -171,6 +220,7 @@ bool GymData::bookCourse(int mi, int ci, QString &err) {
     checkins.push_front(CheckIn(
         m.cardId(),
         m.name(),
+        c.id(),
         c.name(),
         QDateTime::currentDateTime(),
         "预约"
@@ -180,13 +230,15 @@ bool GymData::bookCourse(int mi, int ci, QString &err) {
     return true;
 }
 
-bool GymData::checkIn(int mi, int ci, QString &err) {
-    if (mi < 0 || mi >= members.size()) {
-        err = "无效的会员索引";
+bool GymData::checkIn(const QString &memberId, const QString &courseId, QString &err) {
+    const int mi = findMemberIndex(memberId);
+    const int ci = findCourseIndex(courseId);
+    if (mi < 0) {
+        err = "无效的会员卡号";
         return false;
     }
-    if (ci < 0 || ci >= courses.size()) {
-        err = "无效的课程索引";
+    if (ci < 0) {
+        err = "无效的课程 ID";
         return false;
     }
 
@@ -206,8 +258,9 @@ bool GymData::checkIn(int mi, int ci, QString &err) {
 
     // 检查是否已签到该课程
     for (const auto &checkin : checkins) {
-        if (checkin.memberId() == m.cardId() && 
-            checkin.courseName() == c.name() && 
+        if (checkin.memberId() == m.cardId() &&
+            (checkin.courseId() == c.id() ||
+             (checkin.courseId().isEmpty() && checkin.courseName() == c.name())) &&
             checkin.type() == "签到") {
             err = "该会员已签到此课程";
             return false;
@@ -218,8 +271,9 @@ bool GymData::checkIn(int mi, int ci, QString &err) {
     bool hasBooked = m.level() == "钻石";
     if (!hasBooked) {
         for (const auto &checkin : checkins) {
-            if (checkin.memberId() == m.cardId() && 
-                checkin.courseName() == c.name() && 
+            if (checkin.memberId() == m.cardId() &&
+                (checkin.courseId() == c.id() ||
+                 (checkin.courseId().isEmpty() && checkin.courseName() == c.name())) &&
                 checkin.type() == "预约") {
                 hasBooked = true;
                 break;
@@ -258,6 +312,7 @@ bool GymData::checkIn(int mi, int ci, QString &err) {
     checkins.push_front(CheckIn(
         m.cardId(),
         m.name(),
+        c.id(),
         c.name(),
         QDateTime::currentDateTime(),
         "签到"
@@ -308,6 +363,7 @@ bool GymData::saveToJson(const QString &filePath) {
         QJsonObject checkinObj;
         checkinObj["memberId"] = checkin.memberId();
         checkinObj["memberName"] = checkin.memberName();
+        checkinObj["courseId"] = checkin.courseId();
         checkinObj["courseName"] = checkin.courseName();
         checkinObj["time"] = checkin.time().toString("yyyy-MM-dd HH:mm:ss");
         checkinObj["type"] = checkin.type();
@@ -315,16 +371,18 @@ bool GymData::saveToJson(const QString &filePath) {
     }
     json["checkins"] = checkinsArray;
     
-    // 写入文件
-    QFile file(filePath);
+    // 原子写入：写入失败时不会直接截断原文件。
+    QSaveFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         return false;
     }
     
     QJsonDocument doc(json);
-    file.write(doc.toJson(QJsonDocument::Indented));
-    file.close();
-    return true;
+    if (file.write(doc.toJson(QJsonDocument::Indented)) < 0) {
+        file.cancelWriting();
+        return false;
+    }
+    return file.commit();
 }
 
 bool GymData::loadFromJson(const QString &filePath) {
@@ -336,30 +394,53 @@ bool GymData::loadFromJson(const QString &filePath) {
     QByteArray jsonData = file.readAll();
     file.close();
     
-    QJsonDocument doc = QJsonDocument::fromJson(jsonData);
-    if (!doc.isObject()) {
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
         return false;
     }
     
     QJsonObject json = doc.object();
     
-    // 加载会员数据
-    members.clear();
+    if (!json.value("members").isArray() ||
+        !json.value("courses").isArray() ||
+        !json.value("checkins").isArray()) {
+        return false;
+    }
+
+    QVector<Member> loadedMembers;
+    QVector<Course> loadedCourses;
+    QVector<CheckIn> loadedCheckIns;
+
+    // 加载会员数据到临时容器，全部成功后再替换当前数据。
     QJsonArray membersArray = json["members"].toArray();
     for (const auto &memberValue : membersArray) {
+        if (!memberValue.isObject()) {
+            return false;
+        }
         QJsonObject memberObj = memberValue.toObject();
         QString cardId = memberObj["cardId"].toString();
         QString name = memberObj["name"].toString();
         QDate expiryDate = QDate::fromString(memberObj["expiryDate"].toString(), "yyyy-MM-dd");
         QString level = memberObj["level"].toString();
         int points = memberObj["points"].toInt();
-        members.push_back(Member(cardId, name, expiryDate, level, points));
+        if (cardId.isEmpty() || name.isEmpty() || !expiryDate.isValid() || points < 0) {
+            return false;
+        }
+        for (const auto &member : loadedMembers) {
+            if (member.cardId() == cardId) {
+                return false;
+            }
+        }
+        loadedMembers.push_back(Member(cardId, name, expiryDate, level, points));
     }
     
     // 加载课程数据
-    courses.clear();
     QJsonArray coursesArray = json["courses"].toArray();
     for (const auto &courseValue : coursesArray) {
+        if (!courseValue.isObject()) {
+            return false;
+        }
         QJsonObject courseObj = courseValue.toObject();
         QString id = courseObj["id"].toString();
         QString name = courseObj["name"].toString();
@@ -372,21 +453,43 @@ bool GymData::loadFromJson(const QString &filePath) {
         int currentBooked = courseObj["currentBooked"].toInt();
         QDate startDate = QDate::fromString(courseObj["startDate"].toString(), "yyyy-MM-dd");
         QDate endDate = QDate::fromString(courseObj["endDate"].toString(), "yyyy-MM-dd");
-        courses.push_back(Course(id, name, courseType, description, coach, timeStr, price, maxParticipants, currentBooked, startDate, endDate));
+        if (id.isEmpty() || name.isEmpty() || !startDate.isValid() || !endDate.isValid() ||
+            startDate > endDate || price < 0 || maxParticipants <= 0 ||
+            currentBooked < 0 || currentBooked > maxParticipants) {
+            return false;
+        }
+        for (const auto &course : loadedCourses) {
+            if (course.id() == id) {
+                return false;
+            }
+        }
+        loadedCourses.push_back(Course(id, name, courseType, description, coach, timeStr,
+                                       price, maxParticipants, currentBooked, startDate, endDate));
     }
     
     // 加载签到记录
-    checkins.clear();
     QJsonArray checkinsArray = json["checkins"].toArray();
     for (const auto &checkinValue : checkinsArray) {
+        if (!checkinValue.isObject()) {
+            return false;
+        }
         QJsonObject checkinObj = checkinValue.toObject();
         QString memberId = checkinObj["memberId"].toString();
         QString memberName = checkinObj["memberName"].toString();
+        QString courseId = checkinObj["courseId"].toString();
         QString courseName = checkinObj["courseName"].toString();
         QDateTime time = QDateTime::fromString(checkinObj["time"].toString(), "yyyy-MM-dd HH:mm:ss");
         QString type = checkinObj["type"].toString();
-        checkins.push_back(CheckIn(memberId, memberName, courseName, time, type));
+        if (memberId.isEmpty() || memberName.isEmpty() || courseName.isEmpty() ||
+            !time.isValid() || (type != "预约" && type != "签到")) {
+            return false;
+        }
+        loadedCheckIns.push_back(CheckIn(memberId, memberName, courseId, courseName, time, type));
     }
+
+    members = loadedMembers;
+    courses = loadedCourses;
+    checkins = loadedCheckIns;
     
     emit dataChanged();
     return true;
@@ -447,7 +550,7 @@ int GymData::getTotalCourses() const {
 int GymData::getAvailableCourses() const {
     int count = 0;
     for (const auto &course : courses) {
-        if (course.currentBooked() < course.maxParticipants()) {
+        if (!course.isExpired() && course.currentBooked() < course.maxParticipants()) {
             count++;
         }
     }

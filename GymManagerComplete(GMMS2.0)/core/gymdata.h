@@ -17,13 +17,16 @@ public:
     const QVector<Course>& getCourses() const;
     const QVector<CheckIn>& getCheckIns() const;
     bool addMember(const Member&);
-    bool editMember(int index, const Member& newMember);
-    bool deleteMember(int index);
+    bool editMember(const QString& cardId, const Member& newMember);
+    bool deleteMember(const QString& cardId);
     bool addCourse(const Course&);
-    bool editCourse(int index, const Course& newCourse);
-    bool deleteCourse(int index);
-    bool bookCourse(int,int,QString&);
-    bool checkIn(int,int,QString&);
+    bool editCourse(const QString& courseId, const Course& newCourse);
+    bool deleteCourse(const QString& courseId);
+    bool bookCourse(const QString& memberId, const QString& courseId, QString& error);
+    bool checkIn(const QString& memberId, const QString& courseId, QString& error);
+    int findMemberIndex(const QString& cardId) const;
+    int findCourseIndex(const QString& courseId) const;
+    QString nextCourseId() const;
     bool loadFromJson(const QString& filePath);
     bool saveToJson(const QString& filePath);
     

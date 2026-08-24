@@ -3,6 +3,11 @@
 
 CheckIn::CheckIn() {}
 
+CheckIn::CheckIn(const QString& memberId, const QString& memberName, const QString& courseId,
+                const QString& courseName, const QDateTime& time, const QString& type)
+    : m_memberId(memberId), m_memberName(memberName), m_courseId(courseId),
+      m_courseName(courseName), m_time(time), m_type(type) {}
+
 CheckIn::CheckIn(const QString& memberId, const QString& memberName, const QString& courseName, const QDateTime& time, const QString& type)
     : m_memberId(memberId), m_memberName(memberName), m_courseName(courseName), m_time(time), m_type(type) {}
 
@@ -20,6 +25,14 @@ QString CheckIn::memberName() const {
 
 void CheckIn::setMemberName(const QString& memberName) {
     m_memberName = memberName;
+}
+
+QString CheckIn::courseId() const {
+    return m_courseId;
+}
+
+void CheckIn::setCourseId(const QString& courseId) {
+    m_courseId = courseId;
 }
 
 QString CheckIn::courseName() const {
