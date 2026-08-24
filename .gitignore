@@ -1,0 +1,24 @@
+# IDE and local Qt Creator settings
+.vscode/
+**/*.pro.user
+**/.qmake.stash
+
+# Qt/qmake generated build files
+**/Makefile
+**/Makefile.*
+**/object_script.*
+**/moc_*.cpp
+**/moc_predefs.h
+**/*.o
+**/*.obj
+**/*.a
+**/*.so
+**/*.dll
+**/*.exe
+
+# Build output directories
+**/debug/
+**/release/
+
+# Runtime data (keep local user data out of source control)
+**/gym_data.json
